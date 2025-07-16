@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,14 +15,31 @@ interface CreateTaskModalProps {
   onClose: () => void
   onSubmit: (task: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void
   columnId: string
+  editingTask?: Task | null
 }
 
-export function CreateTaskModal({ isOpen, onClose, onSubmit, columnId }: CreateTaskModalProps) {
+export function CreateTaskModal({ isOpen, onClose, onSubmit, columnId, editingTask }: CreateTaskModalProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium')
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editingTask) {
+      setTitle(editingTask.title)
+      setDescription(editingTask.description || '')
+      setPriority(editingTask.priority)
+      setTags(editingTask.tags || [])
+    } else {
+      setTitle('')
+      setDescription('')
+      setPriority('medium')
+      setTags([])
+    }
+    setNewTag('')
+  }, [editingTask, isOpen])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,7 +90,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, columnId }: CreateT
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle>{editingTask ? 'Edit Task' : 'Create New Task'}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -178,7 +195,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, columnId }: CreateT
               Cancel
             </Button>
             <Button type="submit" disabled={!title.trim()}>
-              Create Task
+              {editingTask ? 'Update Task' : 'Create Task'}
             </Button>
           </div>
         </form>

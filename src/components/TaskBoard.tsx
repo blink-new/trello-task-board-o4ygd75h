@@ -31,6 +31,7 @@ export function TaskBoard() {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false)
   const [isCreateColumnOpen, setIsCreateColumnOpen] = useState(false)
   const [selectedColumnId, setSelectedColumnId] = useState<string>('')
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -45,17 +46,26 @@ export function TaskBoard() {
     if (!user?.id) return
     
     try {
-      // For now, create a default board if none exists
-      const defaultBoard: Board = {
-        id: 'default-board',
-        title: 'My Task Board',
-        description: 'Default task board',
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+      // Load boards from localStorage for now (can be upgraded to database later)
+      const savedBoards = localStorage.getItem(`boards_${user.id}`)
+      if (savedBoards) {
+        const boards = JSON.parse(savedBoards)
+        setBoards(boards)
+        setCurrentBoard(boards[0] || null)
+      } else {
+        // Create a default board if none exists
+        const defaultBoard: Board = {
+          id: 'default-board',
+          title: 'My Task Board',
+          description: 'Default task board',
+          userId: user.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+        setBoards([defaultBoard])
+        setCurrentBoard(defaultBoard)
+        localStorage.setItem(`boards_${user.id}`, JSON.stringify([defaultBoard]))
       }
-      setBoards([defaultBoard])
-      setCurrentBoard(defaultBoard)
     } catch (error) {
       console.error('Error loading boards:', error)
     }
@@ -65,82 +75,95 @@ export function TaskBoard() {
     if (!currentBoard?.id || !user?.id) return
     
     try {
-      // Create default columns if none exist
-      const defaultColumns: Column[] = [
-        {
-          id: 'todo',
-          title: 'To Do',
-          boardId: currentBoard.id,
-          position: 0,
-          color: '#ef4444',
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'in-progress',
-          title: 'In Progress',
-          boardId: currentBoard.id,
-          position: 1,
-          color: '#f97316',
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'done',
-          title: 'Done',
-          boardId: currentBoard.id,
-          position: 2,
-          color: '#22c55e',
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ]
+      // Load columns and tasks from localStorage
+      const savedColumns = localStorage.getItem(`columns_${user.id}_${currentBoard.id}`)
+      const savedTasks = localStorage.getItem(`tasks_${user.id}_${currentBoard.id}`)
       
-      // Sample tasks
-      const sampleTasks: Task[] = [
-        {
-          id: 'task-1',
-          title: 'Design new landing page',
-          description: 'Create a modern and responsive landing page design',
-          columnId: 'todo',
-          position: 0,
-          tags: ['Design', 'UI/UX'],
-          priority: 'high',
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'task-2',
-          title: 'Implement user authentication',
-          description: 'Set up login and registration functionality',
-          columnId: 'in-progress',
-          position: 0,
-          tags: ['Backend', 'Security'],
-          priority: 'medium',
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'task-3',
-          title: 'Write documentation',
-          description: 'Create comprehensive API documentation',
-          columnId: 'done',
-          position: 0,
-          tags: ['Documentation'],
-          priority: 'low',
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ]
+      if (savedColumns && savedTasks) {
+        setColumns(JSON.parse(savedColumns))
+        setTasks(JSON.parse(savedTasks))
+      } else {
+        // Create default columns if none exist
+        const defaultColumns: Column[] = [
+          {
+            id: 'todo',
+            title: 'To Do',
+            boardId: currentBoard.id,
+            position: 0,
+            color: '#ef4444',
+            userId: user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'in-progress',
+            title: 'In Progress',
+            boardId: currentBoard.id,
+            position: 1,
+            color: '#f97316',
+            userId: user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'done',
+            title: 'Done',
+            boardId: currentBoard.id,
+            position: 2,
+            color: '#22c55e',
+            userId: user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ]
+        
+        // Sample tasks
+        const sampleTasks: Task[] = [
+          {
+            id: 'task-1',
+            title: 'Design new landing page',
+            description: 'Create a modern and responsive landing page design',
+            columnId: 'todo',
+            position: 0,
+            tags: ['Design', 'UI/UX'],
+            priority: 'high',
+            userId: user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'task-2',
+            title: 'Implement user authentication',
+            description: 'Set up login and registration functionality',
+            columnId: 'in-progress',
+            position: 0,
+            tags: ['Backend', 'Security'],
+            priority: 'medium',
+            userId: user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'task-3',
+            title: 'Write documentation',
+            description: 'Create comprehensive API documentation',
+            columnId: 'done',
+            position: 0,
+            tags: ['Documentation'],
+            priority: 'low',
+            userId: user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ]
 
-      setColumns(defaultColumns)
-      setTasks(sampleTasks)
+        setColumns(defaultColumns)
+        setTasks(sampleTasks)
+        
+        // Save to localStorage
+        localStorage.setItem(`columns_${user.id}_${currentBoard.id}`, JSON.stringify(defaultColumns))
+        localStorage.setItem(`tasks_${user.id}_${currentBoard.id}`, JSON.stringify(sampleTasks))
+      }
     } catch (error) {
       console.error('Error loading board data:', error)
     }
@@ -177,6 +200,18 @@ export function TaskBoard() {
     }
   }
 
+  const saveTasks = useCallback((updatedTasks: Task[]) => {
+    if (user?.id && currentBoard?.id) {
+      localStorage.setItem(`tasks_${user.id}_${currentBoard.id}`, JSON.stringify(updatedTasks))
+    }
+  }, [user?.id, currentBoard?.id])
+
+  const saveColumns = useCallback((updatedColumns: Column[]) => {
+    if (user?.id && currentBoard?.id) {
+      localStorage.setItem(`columns_${user.id}_${currentBoard.id}`, JSON.stringify(updatedColumns))
+    }
+  }, [user?.id, currentBoard?.id])
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveTask(null)
@@ -190,6 +225,8 @@ export function TaskBoard() {
     const overColumn = columns.find(c => c.id === overId)
     const overTask = tasks.find(t => t.id === overId)
 
+    let updatedTasks = tasks
+
     if (overColumn) {
       // Dropped on a column
       const columnTasks = tasks.filter(t => t.columnId === overColumn.id)
@@ -198,10 +235,13 @@ export function TaskBoard() {
       const updatedTask = {
         ...activeTask,
         columnId: overColumn.id,
-        position: newPosition
+        position: newPosition,
+        updatedAt: new Date().toISOString()
       }
 
-      setTasks(prev => prev.map(t => t.id === activeTask.id ? updatedTask : t))
+      updatedTasks = tasks.map(t => t.id === activeTask.id ? updatedTask : t)
+      setTasks(updatedTasks)
+      saveTasks(updatedTasks)
     } else if (overTask && overTask.columnId !== activeTask.columnId) {
       // Dropped on a task in different column
       const targetColumnTasks = tasks.filter(t => t.columnId === overTask.columnId && t.id !== activeTask.id)
@@ -210,10 +250,13 @@ export function TaskBoard() {
       const updatedTask = {
         ...activeTask,
         columnId: overTask.columnId,
-        position: targetIndex
+        position: targetIndex,
+        updatedAt: new Date().toISOString()
       }
 
-      setTasks(prev => prev.map(t => t.id === activeTask.id ? updatedTask : t))
+      updatedTasks = tasks.map(t => t.id === activeTask.id ? updatedTask : t)
+      setTasks(updatedTasks)
+      saveTasks(updatedTasks)
     } else if (overTask && overTask.columnId === activeTask.columnId) {
       // Reordering within same column
       const columnTasks = tasks.filter(t => t.columnId === activeTask.columnId)
@@ -221,15 +264,16 @@ export function TaskBoard() {
       const newIndex = columnTasks.findIndex(t => t.id === overTask.id)
       
       const reorderedTasks = arrayMove(columnTasks, oldIndex, newIndex)
-      const updatedTasks = tasks.map(task => {
+      updatedTasks = tasks.map(task => {
         const reorderedTask = reorderedTasks.find(rt => rt.id === task.id)
         if (reorderedTask) {
-          return { ...task, position: reorderedTasks.indexOf(reorderedTask) }
+          return { ...task, position: reorderedTasks.indexOf(reorderedTask), updatedAt: new Date().toISOString() }
         }
         return task
       })
 
       setTasks(updatedTasks)
+      saveTasks(updatedTasks)
     }
   }
 
@@ -241,7 +285,9 @@ export function TaskBoard() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
-    setTasks(prev => [...prev, newTask])
+    const updatedTasks = [...tasks, newTask]
+    setTasks(updatedTasks)
+    saveTasks(updatedTasks)
   }
 
   const handleCreateColumn = (columnData: Omit<Column, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'boardId' | 'position'>) => {
@@ -254,12 +300,40 @@ export function TaskBoard() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
-    setColumns(prev => [...prev, newColumn])
+    const updatedColumns = [...columns, newColumn]
+    setColumns(updatedColumns)
+    saveColumns(updatedColumns)
   }
 
   const openCreateTask = (columnId: string) => {
     setSelectedColumnId(columnId)
+    setEditingTask(null)
     setIsCreateTaskOpen(true)
+  }
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task)
+    setSelectedColumnId(task.columnId)
+    setIsCreateTaskOpen(true)
+  }
+
+  const handleDeleteTask = (taskId: string) => {
+    const updatedTasks = tasks.filter(t => t.id !== taskId)
+    setTasks(updatedTasks)
+    saveTasks(updatedTasks)
+  }
+
+  const handleUpdateTask = (taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    if (editingTask) {
+      const updatedTask: Task = {
+        ...editingTask,
+        ...taskData,
+        updatedAt: new Date().toISOString()
+      }
+      const updatedTasks = tasks.map(t => t.id === editingTask.id ? updatedTask : t)
+      setTasks(updatedTasks)
+      saveTasks(updatedTasks)
+    }
   }
 
   if (loading) {
@@ -305,6 +379,8 @@ export function TaskBoard() {
                   column={column}
                   tasks={tasks.filter(task => task.columnId === column.id)}
                   onCreateTask={() => openCreateTask(column.id)}
+                  onEditTask={handleEditTask}
+                  onDeleteTask={handleDeleteTask}
                 />
               ))}
             </SortableContext>
@@ -327,9 +403,13 @@ export function TaskBoard() {
 
       <CreateTaskModal
         isOpen={isCreateTaskOpen}
-        onClose={() => setIsCreateTaskOpen(false)}
-        onSubmit={handleCreateTask}
+        onClose={() => {
+          setIsCreateTaskOpen(false)
+          setEditingTask(null)
+        }}
+        onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
         columnId={selectedColumnId}
+        editingTask={editingTask}
       />
 
       <CreateColumnModal

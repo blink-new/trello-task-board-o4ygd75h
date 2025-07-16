@@ -11,9 +11,11 @@ interface TaskColumnProps {
   column: Column
   tasks: Task[]
   onCreateTask: () => void
+  onEditTask?: (task: Task) => void
+  onDeleteTask?: (taskId: string) => void
 }
 
-export function TaskColumn({ column, tasks, onCreateTask }: TaskColumnProps) {
+export function TaskColumn({ column, tasks, onCreateTask, onEditTask, onDeleteTask }: TaskColumnProps) {
   const {
     attributes,
     listeners,
@@ -80,7 +82,12 @@ export function TaskColumn({ column, tasks, onCreateTask }: TaskColumnProps) {
       {/* Tasks */}
       <div className="flex-1 space-y-3 min-h-[200px]">
         {sortedTasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard 
+            key={task.id} 
+            task={task} 
+            onEdit={onEditTask}
+            onDelete={onDeleteTask}
+          />
         ))}
       </div>
 
